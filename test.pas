@@ -1,0 +1,6 @@
+PROGRAM Test;
+VAR
+  x : INTEGER;
+BEGIN
+  x := 5;
+END.
