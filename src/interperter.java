@@ -10,6 +10,7 @@ public class interperter extends delphiBaseVisitor<Object> {
     private Scanner scanner;
 
     private Map<String, ClassInfo> classes;
+    private Map<String, InterfaceInfo> interfaces = new HashMap<String, InterfaceInfo>();
 
     private Obj currentSelf;
     private Map<String, Object> localVars;
@@ -25,6 +26,17 @@ public class interperter extends delphiBaseVisitor<Object> {
         currentSelf = null;
         localVars = null;
         currentClassName = null;
+    }
+
+    private static class InterfaceInfo {
+
+        String name;
+        Map<String, MethodInfo> methods;
+
+        InterfaceInfo(String n) {
+            name = n;
+            methods = new HashMap<String, MethodInfo>();
+        }
     }
 
     private static class Obj {
@@ -61,6 +73,10 @@ public class interperter extends delphiBaseVisitor<Object> {
 
         String name;
 
+        String parentName;
+
+        List<String> interfaces;
+
         Map<String, Boolean> fieldIsPublic;
         Map<String, MethodInfo> methods;
         Map<String, MethodInfo> constructors;
@@ -69,6 +85,10 @@ public class interperter extends delphiBaseVisitor<Object> {
         ClassInfo(String n) {
 
             name = n;
+
+            parentName = null;
+
+            interfaces = new ArrayList<String>();
 
             fieldIsPublic = new HashMap<String, Boolean>();
             methods = new HashMap<String, MethodInfo>();
@@ -97,6 +117,224 @@ public class interperter extends delphiBaseVisitor<Object> {
 
         if (o.dead == true) {
             throw new RuntimeException("Object already destroyed, cannot use it.");
+        }
+    }
+
+    private ClassInfo getClassInfo(String name) {
+
+        if (name == null) {
+            return null;
+        }
+
+        String k;
+        k = up(name);
+
+        if (k == null) {
+            return null;
+        }
+
+        if (classes.containsKey(k)) {
+            return classes.get(k);
+        }
+
+        return null;
+    }
+
+    private MethodInfo findMethodUp(ClassInfo ci, String methodName) {
+
+        if (ci == null) {
+            return null;
+        }
+
+        String mk;
+        mk = up(methodName);
+
+        ClassInfo cur;
+        cur = ci;
+
+        while (cur != null) {
+
+            if (cur.methods.containsKey(mk)) {
+                return cur.methods.get(mk);
+            }
+
+            if (cur.parentName == null) {
+                cur = null;
+            } else {
+                cur = getClassInfo(cur.parentName);
+            }
+        }
+
+        return null;
+    }
+
+    private MethodInfo findCtorUp(ClassInfo ci, String ctorName) {
+
+        if (ci == null) {
+            return null;
+        }
+
+        String ck;
+        ck = up(ctorName);
+
+        ClassInfo cur;
+        cur = ci;
+
+        while (cur != null) {
+
+            if (cur.constructors.containsKey(ck)) {
+                return cur.constructors.get(ck);
+            }
+
+            if (cur.parentName == null) {
+                cur = null;
+            } else {
+                cur = getClassInfo(cur.parentName);
+            }
+        }
+
+        return null;
+    }
+
+    private MethodInfo findDtorUp(ClassInfo ci, String dtorName) {
+
+        if (ci == null) {
+            return null;
+        }
+
+        String dk;
+        dk = up(dtorName);
+
+        ClassInfo cur;
+        cur = ci;
+
+        while (cur != null) {
+
+            if (cur.destructors.containsKey(dk)) {
+                return cur.destructors.get(dk);
+            }
+
+            if (cur.parentName == null) {
+                cur = null;
+            } else {
+                cur = getClassInfo(cur.parentName);
+            }
+        }
+
+        return null;
+    }
+
+    private Boolean findFieldVisUp(ClassInfo ci, String fieldName) {
+
+        if (ci == null) {
+            return null;
+        }
+
+        String fk;
+        fk = up(fieldName);
+
+        ClassInfo cur;
+        cur = ci;
+
+        while (cur != null) {
+
+            if (cur.fieldIsPublic.containsKey(fk)) {
+                return cur.fieldIsPublic.get(fk);
+            }
+
+            if (cur.parentName == null) {
+                cur = null;
+            } else {
+                cur = getClassInfo(cur.parentName);
+            }
+        }
+
+        return null;
+    }
+
+    private void initFieldsUp(Obj obj, ClassInfo ci) {
+
+        if (obj == null) {
+            return;
+        }
+
+        if (ci == null) {
+            return;
+        }
+
+        ClassInfo cur;
+        cur = ci;
+
+        while (cur != null) {
+
+            List<String> keys;
+            keys = new ArrayList<String>();
+            keys.addAll(cur.fieldIsPublic.keySet());
+
+            int i;
+            i = 0;
+            while (i < keys.size()) {
+
+                String f;
+                f = keys.get(i);
+
+                if (obj.fields.containsKey(f) == false) {
+                    obj.fields.put(f, Integer.valueOf(0));
+                }
+
+                i = i + 1;
+            }
+
+            if (cur.parentName == null) {
+                cur = null;
+            } else {
+                cur = getClassInfo(cur.parentName);
+            }
+        }
+    }
+
+    private void checkInterfaces(ClassInfo ci) {
+
+        if (ci == null) {
+            return;
+        }
+
+        int i;
+        i = 0;
+        while (i < ci.interfaces.size()) {
+
+            String iname;
+            iname = ci.interfaces.get(i);
+
+            InterfaceInfo ii;
+            ii = interfaces.get(up(iname));
+
+            if (ii == null) {
+                throw new RuntimeException("Unknown interface: " + iname);
+            }
+
+            List<String> need;
+            need = new ArrayList<String>();
+            need.addAll(ii.methods.keySet());
+
+            int j;
+            j = 0;
+            while (j < need.size()) {
+
+                String m;
+                m = need.get(j);
+
+                MethodInfo got;
+                got = findMethodUp(ci, m);
+
+                if (got == null) {
+                    throw new RuntimeException("Class " + ci.name + " does not implement method " + m + " from " + iname);
+                }
+
+                j = j + 1;
+            }
+
+            i = i + 1;
         }
     }
 
@@ -225,21 +463,15 @@ public class interperter extends delphiBaseVisitor<Object> {
 
         checkNotDead(obj);
 
-        String clsKey;
-        clsKey = up(obj.className);
-
         ClassInfo ci;
-        ci = classes.get(clsKey);
+        ci = getClassInfo(obj.className);
 
         if (ci == null) {
             throw new RuntimeException("Unknown class: " + obj.className);
         }
 
-        String fKey;
-        fKey = up(fieldName);
-
         Boolean isPub;
-        isPub = ci.fieldIsPublic.get(fKey);
+        isPub = findFieldVisUp(ci, fieldName);
 
         if (isPub == null) {
             throw new RuntimeException("Field not found: " + fieldName);
@@ -251,28 +483,22 @@ public class interperter extends delphiBaseVisitor<Object> {
             }
         }
 
-        return obj.fields.get(fKey);
+        return obj.fields.get(up(fieldName));
     }
 
     private void setFieldValue(Obj obj, String fieldName, Object value, boolean fromOutside) {
 
         checkNotDead(obj);
 
-        String clsKey;
-        clsKey = up(obj.className);
-
         ClassInfo ci;
-        ci = classes.get(clsKey);
+        ci = getClassInfo(obj.className);
 
         if (ci == null) {
             throw new RuntimeException("Unknown class: " + obj.className);
         }
 
-        String fKey;
-        fKey = up(fieldName);
-
         Boolean isPub;
-        isPub = ci.fieldIsPublic.get(fKey);
+        isPub = findFieldVisUp(ci, fieldName);
 
         if (isPub == null) {
             throw new RuntimeException("Field not found: " + fieldName);
@@ -284,7 +510,7 @@ public class interperter extends delphiBaseVisitor<Object> {
             }
         }
 
-        obj.fields.put(fKey, value);
+        obj.fields.put(up(fieldName), value);
     }
 
     private List<String> grabParams(delphiParser.FormalParameterListContext fpl) {
@@ -339,124 +565,211 @@ public class interperter extends delphiBaseVisitor<Object> {
         String typeName;
         typeName = up(ctx.identifier().getText());
 
-        if (ctx.type_() != null) {
+        if (ctx.type_() == null) {
+            return super.visitTypeDefinition(ctx);
+        }
 
-            if (ctx.type_().classType() != null) {
+        if (ctx.type_().interfaceType() != null) {
 
-                ClassInfo ci;
-                ci = new ClassInfo(typeName);
+            InterfaceInfo ii;
+            ii = new InterfaceInfo(typeName);
 
-                delphiParser.ClassTypeContext ct;
-                ct = ctx.type_().classType();
+            delphiParser.InterfaceTypeContext it;
+            it = ctx.type_().interfaceType();
 
-                delphiParser.ClassBodyContext body;
-                body = ct.classBody();
+            List<delphiParser.InterfaceMemberContext> mems;
+            mems = it.interfaceBody().interfaceMember();
 
-                List<delphiParser.VisibilitySectionContext> sections;
-                sections = body.visibilitySection();
+            int i;
+            i = 0;
+            while (i < mems.size()) {
 
-                int s;
-                s = 0;
-                while (s < sections.size()) {
+                delphiParser.InterfaceMemberContext m;
+                m = mems.get(i);
 
-                    delphiParser.VisibilitySectionContext sec;
-                    sec = sections.get(s);
+                if (m.PROCEDURE() != null) {
 
-                    boolean isPublic;
-                    isPublic = false;
+                    String mname;
+                    mname = up(m.identifier().getText());
 
-                    if (sec.PUBLIC() != null) {
-                        isPublic = true;
+                    List<String> params;
+                    params = new ArrayList<String>();
+
+                    if (m.formalParameterList() != null) {
+                        params = grabParams(m.formalParameterList());
                     }
 
-                    int m;
-                    m = 0;
-                    while (m < sec.classMember().size()) {
+                    MethodInfo fake;
+                    fake = new MethodInfo(true, null, params);
 
-                        delphiParser.ClassMemberContext member;
-                        member = sec.classMember(m);
-
-                        if (member.fieldDecl() != null) {
-
-                            List<delphiParser.IdentifierContext> ids;
-                            ids = member.fieldDecl().identifierList().identifier();
-
-                            int i;
-                            i = 0;
-                            while (i < ids.size()) {
-
-                                String f;
-                                f = up(ids.get(i).getText());
-
-                                ci.fieldIsPublic.put(f, Boolean.valueOf(isPublic));
-
-                                i = i + 1;
-                            }
-                        }
-
-                        if (member.methodDecl() != null) {
-
-                            if (member.methodDecl().PROCEDURE() != null) {
-
-                                String methodName;
-                                methodName = up(member.methodDecl().identifier().getText());
-
-                                delphiParser.BlockContext b;
-                                b = member.methodDecl().block();
-
-                                List<String> params;
-                                params = grabParams(member.methodDecl().formalParameterList());
-
-                                MethodInfo mi;
-                                mi = new MethodInfo(isPublic, b, params);
-
-                                ci.methods.put(methodName, mi);
-                            }
-                        }
-
-                        if (member.constructorDecleration() != null) {
-
-                            String ctorName;
-                            ctorName = up(member.constructorDecleration().identifier().getText());
-
-                            delphiParser.BlockContext b;
-                            b = member.constructorDecleration().block();
-
-                            List<String> params;
-                            params = grabParams(member.constructorDecleration().formalParameterList());
-
-                            MethodInfo mi;
-                            mi = new MethodInfo(true, b, params);
-
-                            ci.constructors.put(ctorName, mi);
-                        }
-
-                        if (member.destructorDecleration() != null) {
-
-                            String dname;
-                            dname = up(member.destructorDecleration().identifier().getText());
-
-                            delphiParser.BlockContext b;
-                            b = member.destructorDecleration().block();
-
-                            List<String> params;
-                            params = new ArrayList<String>();
-
-                            MethodInfo mi;
-                            mi = new MethodInfo(true, b, params);
-
-                            ci.destructors.put(dname, mi);
-                        }
-
-                        m = m + 1;
-                    }
-
-                    s = s + 1;
+                    ii.methods.put(mname, fake);
                 }
 
-                classes.put(typeName, ci);
-                return null;
+                if (m.FUNCTION() != null) {
+
+                    String mname;
+                    mname = up(m.identifier().getText());
+
+                    List<String> params;
+                    params = new ArrayList<String>();
+
+                    if (m.formalParameterList() != null) {
+                        params = grabParams(m.formalParameterList());
+                    }
+
+                    MethodInfo fake;
+                    fake = new MethodInfo(true, null, params);
+
+                    ii.methods.put(mname, fake);
+                }
+
+                i = i + 1;
             }
+
+            interfaces.put(typeName, ii);
+
+            return null;
+        }
+
+        if (ctx.type_().classType() != null) {
+
+            ClassInfo ci;
+            ci = new ClassInfo(typeName);
+
+            delphiParser.ClassTypeContext ct;
+            ct = ctx.type_().classType();
+
+            if (ct.classHeritage() != null) {
+
+                List<delphiParser.IdentifierContext> ids;
+                ids = ct.classHeritage().identifierList().identifier();
+
+                if (ids.size() > 0) {
+                    String first;
+                    first = ids.get(0).getText();
+                    ci.parentName = up(first);
+                }
+
+                int z;
+                z = 1;
+                while (z < ids.size()) {
+                    String in;
+                    in = ids.get(z).getText();
+                    ci.interfaces.add(up(in));
+                    z = z + 1;
+                }
+            }
+
+            delphiParser.ClassBodyContext body;
+            body = ct.classBody();
+
+            List<delphiParser.VisibilitySectionContext> sections;
+            sections = body.visibilitySection();
+
+            int s;
+            s = 0;
+            while (s < sections.size()) {
+
+                delphiParser.VisibilitySectionContext sec;
+                sec = sections.get(s);
+
+                boolean isPublic;
+                isPublic = false;
+
+                if (sec.PUBLIC() != null) {
+                    isPublic = true;
+                }
+
+                int m;
+                m = 0;
+                while (m < sec.classMember().size()) {
+
+                    delphiParser.ClassMemberContext member;
+                    member = sec.classMember(m);
+
+                    if (member.fieldDecl() != null) {
+
+                        List<delphiParser.IdentifierContext> ids;
+                        ids = member.fieldDecl().identifierList().identifier();
+
+                        int i;
+                        i = 0;
+                        while (i < ids.size()) {
+
+                            String f;
+                            f = up(ids.get(i).getText());
+
+                            ci.fieldIsPublic.put(f, Boolean.valueOf(isPublic));
+
+                            i = i + 1;
+                        }
+                    }
+
+                    if (member.methodDecl() != null) {
+
+                        if (member.methodDecl().PROCEDURE() != null) {
+
+                            String methodName;
+                            methodName = up(member.methodDecl().identifier().getText());
+
+                            delphiParser.BlockContext b;
+                            b = member.methodDecl().block();
+
+                            List<String> params;
+                            params = grabParams(member.methodDecl().formalParameterList());
+
+                            MethodInfo mi;
+                            mi = new MethodInfo(isPublic, b, params);
+
+                            ci.methods.put(methodName, mi);
+                        }
+                    }
+
+                    if (member.constructorDecleration() != null) {
+
+                        String ctorName;
+                        ctorName = up(member.constructorDecleration().identifier().getText());
+
+                        delphiParser.BlockContext b;
+                        b = member.constructorDecleration().block();
+
+                        List<String> params;
+                        params = grabParams(member.constructorDecleration().formalParameterList());
+
+                        MethodInfo mi;
+                        mi = new MethodInfo(true, b, params);
+
+                        ci.constructors.put(ctorName, mi);
+                    }
+
+                    if (member.destructorDecleration() != null) {
+
+                        String dname;
+                        dname = up(member.destructorDecleration().identifier().getText());
+
+                        delphiParser.BlockContext b;
+                        b = member.destructorDecleration().block();
+
+                        List<String> params;
+                        params = new ArrayList<String>();
+
+                        MethodInfo mi;
+                        mi = new MethodInfo(true, b, params);
+
+                        ci.destructors.put(dname, mi);
+                    }
+
+                    m = m + 1;
+                }
+
+                s = s + 1;
+            }
+
+            classes.put(typeName, ci);
+
+            checkInterfaces(ci);
+
+            return null;
         }
 
         return super.visitTypeDefinition(ctx);
@@ -472,6 +785,37 @@ public class interperter extends delphiBaseVisitor<Object> {
         r = visit(b);
 
         return r;
+    }
+
+    @Override
+    public Object visitForStatement(delphiParser.ForStatementContext ctx) {
+
+        String varName = ctx.identifier().getText();          // i
+        Object startObj = visit(ctx.forList().initialValue()); // start expression
+        Object endObj   = visit(ctx.forList().finalValue());   // end expression
+
+        int start = convertToInt(startObj);
+        int end   = convertToInt(endObj);
+
+        boolean isTo = (ctx.forList().TO() != null); // TO vs DOWNTO
+
+        if (isTo) {
+            int v = start;
+            while (v <= end) {
+                setNameValue(varName, Integer.valueOf(v));
+                visit(ctx.statement());
+                v = v + 1;
+            }
+        } else {
+            int v = start;
+            while (v >= end) {
+                setNameValue(varName, Integer.valueOf(v));
+                visit(ctx.statement());
+                v = v - 1;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -627,14 +971,14 @@ public class interperter extends delphiBaseVisitor<Object> {
                             checkNotDead(obj);
 
                             ClassInfo ci;
-                            ci = classes.get(up(obj.className));
+                            ci = getClassInfo(obj.className);
 
                             if (ci == null) {
                                 throw new RuntimeException("Unknown class: " + obj.className);
                             }
 
                             MethodInfo di;
-                            di = ci.destructors.get(up(right));
+                            di = findDtorUp(ci, right);
 
                             if (di != null) {
 
@@ -648,7 +992,7 @@ public class interperter extends delphiBaseVisitor<Object> {
                             }
 
                             MethodInfo mi;
-                            mi = ci.methods.get(up(right));
+                            mi = findMethodUp(ci, right);
 
                             if (mi != null) {
 
@@ -733,7 +1077,7 @@ public class interperter extends delphiBaseVisitor<Object> {
                         ci = classes.get(left);
 
                         MethodInfo ctor;
-                        ctor = ci.constructors.get(right);
+                        ctor = findCtorUp(ci, right);
 
                         if (ctor == null) {
                             throw new RuntimeException("Constructor not found: " + left + "." + right);
@@ -742,22 +1086,7 @@ public class interperter extends delphiBaseVisitor<Object> {
                         Obj obj;
                         obj = new Obj(left);
 
-                        List<String> keys;
-                        keys = new ArrayList<String>();
-
-                        keys.addAll(ci.fieldIsPublic.keySet());
-
-                        int k;
-                        k = 0;
-                        while (k < keys.size()) {
-
-                            String f;
-                            f = keys.get(k);
-
-                            obj.fields.put(f, Integer.valueOf(0));
-
-                            k = k + 1;
-                        }
+                        initFieldsUp(obj, ci);
 
                         runMethodLikeCode(obj, ci, ctor, args);
 
@@ -775,14 +1104,14 @@ public class interperter extends delphiBaseVisitor<Object> {
                         checkNotDead(obj);
 
                         ClassInfo ci;
-                        ci = classes.get(up(obj.className));
+                        ci = getClassInfo(obj.className);
 
                         if (ci == null) {
                             throw new RuntimeException("Unknown class: " + obj.className);
                         }
 
                         MethodInfo di;
-                        di = ci.destructors.get(right);
+                        di = findDtorUp(ci, right);
 
                         if (di != null) {
                             runMethodLikeCode(obj, ci, di, args);
@@ -791,7 +1120,7 @@ public class interperter extends delphiBaseVisitor<Object> {
                         }
 
                         MethodInfo mi;
-                        mi = ci.methods.get(right);
+                        mi = findMethodUp(ci, right);
 
                         if (mi == null) {
                             throw new RuntimeException("Method not found: " + obj.className + "." + right);
@@ -863,7 +1192,9 @@ public class interperter extends delphiBaseVisitor<Object> {
             p = p + 1;
         }
 
-        visit(mi.block);
+        if (mi.block != null) {
+            visit(mi.block);
+        }
 
         currentSelf = oldSelf;
         localVars = oldLocals;

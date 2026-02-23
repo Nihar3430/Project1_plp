@@ -357,6 +357,16 @@ public interface delphiListener extends ParseTreeListener {
 	 */
 	void exitClassType(delphiParser.ClassTypeContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link delphiParser#classHeritage}.
+	 * @param ctx the parse tree
+	 */
+	void enterClassHeritage(delphiParser.ClassHeritageContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link delphiParser#classHeritage}.
+	 * @param ctx the parse tree
+	 */
+	void exitClassHeritage(delphiParser.ClassHeritageContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link delphiParser#classBody}.
 	 * @param ctx the parse tree
 	 */
@@ -366,6 +376,36 @@ public interface delphiListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitClassBody(delphiParser.ClassBodyContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link delphiParser#interfaceType}.
+	 * @param ctx the parse tree
+	 */
+	void enterInterfaceType(delphiParser.InterfaceTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link delphiParser#interfaceType}.
+	 * @param ctx the parse tree
+	 */
+	void exitInterfaceType(delphiParser.InterfaceTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link delphiParser#interfaceBody}.
+	 * @param ctx the parse tree
+	 */
+	void enterInterfaceBody(delphiParser.InterfaceBodyContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link delphiParser#interfaceBody}.
+	 * @param ctx the parse tree
+	 */
+	void exitInterfaceBody(delphiParser.InterfaceBodyContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link delphiParser#interfaceMember}.
+	 * @param ctx the parse tree
+	 */
+	void enterInterfaceMember(delphiParser.InterfaceMemberContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link delphiParser#interfaceMember}.
+	 * @param ctx the parse tree
+	 */
+	void exitInterfaceMember(delphiParser.InterfaceMemberContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link delphiParser#visibilitySection}.
 	 * @param ctx the parse tree

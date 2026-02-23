@@ -148,6 +148,7 @@ type_
     | structuredType
     | pointerType
     | classType
+    | interfaceType
     ;
 
 simpleType
@@ -208,11 +209,28 @@ recordType
     ;
 
 classType
-    : CLASS classBody END
+    : CLASS classHeritage? classBody END
+    ;
+
+classHeritage
+    : LPAREN identifierList RPAREN
     ;
 
 classBody
     : (visibilitySection)*
+    ;
+
+interfaceType
+    : INTERFACE interfaceBody END
+    ;
+
+interfaceBody
+    : (interfaceMember)*
+    ;
+
+interfaceMember
+    : PROCEDURE identifier (formalParameterList)? SEMI
+    | FUNCTION identifier (formalParameterList)? COLON resultType SEMI
     ;
 
 visibilitySection
@@ -498,7 +516,7 @@ conditionalStatement
     ;
 
 ifStatement
-    : IF expression THEN statement (: ELSE statement)?
+    : IF expression THEN statement (ELSE statement)?
     ;
 
 caseStatement
