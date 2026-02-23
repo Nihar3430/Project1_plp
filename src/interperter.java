@@ -4,23 +4,29 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
 
+// interpreter for a delphi/pascal subset using an antlr visitor
 public class interperter extends delphiBaseVisitor<Object> {
 
+    // global variable storage (program scope)
     private Map<String, Object> variableStorage;
+    // stdin scanner used by readln
     private Scanner scanner;
 
+    // known class definitions (by uppercased name)
     private Map<String, ClassInfo> classes;
+    // known interface definitions (by uppercased name)
     private Map<String, InterfaceInfo> interfaces = new HashMap<String, InterfaceInfo>();
 
+    // "self" object when executing inside a method/ctor/dtor
     private Obj currentSelf;
+    // locals for current method call
     private Map<String, Object> localVars;
+    // name of class currently executing (for private access rules)
     private String currentClassName;
 
     public interperter() {
-
         variableStorage = new HashMap<String, Object>();
         scanner = new Scanner(System.in);
-
         classes = new HashMap<String, ClassInfo>();
 
         currentSelf = null;
@@ -28,8 +34,8 @@ public class interperter extends delphiBaseVisitor<Object> {
         currentClassName = null;
     }
 
+    // stores interface method signatures
     private static class InterfaceInfo {
-
         String name;
         Map<String, MethodInfo> methods;
 
@@ -39,42 +45,36 @@ public class interperter extends delphiBaseVisitor<Object> {
         }
     }
 
+    // runtime object instance
     private static class Obj {
-
         String className;
         Map<String, Object> fields;
         boolean dead;
 
         Obj(String name) {
-
             className = name;
-
             fields = new HashMap<String, Object>();
-
             dead = false;
         }
     }
 
+    // stores a method body + metadata
     private static class MethodInfo {
-
         boolean isPublic;
         delphiParser.BlockContext block;
         List<String> paramNames;
 
         MethodInfo(boolean pub, delphiParser.BlockContext b, List<String> p) {
-
             isPublic = pub;
             block = b;
             paramNames = p;
         }
     }
 
+    // stores class definition info
     private static class ClassInfo {
-
         String name;
-
         String parentName;
-
         List<String> interfaces;
 
         Map<String, Boolean> fieldIsPublic;
@@ -83,9 +83,7 @@ public class interperter extends delphiBaseVisitor<Object> {
         Map<String, MethodInfo> destructors;
 
         ClassInfo(String n) {
-
             name = n;
-
             parentName = null;
 
             interfaces = new ArrayList<String>();
@@ -97,31 +95,26 @@ public class interperter extends delphiBaseVisitor<Object> {
         }
     }
 
+    // uppercase helper for case-insensitive identifiers
     private String up(String s) {
-
         if (s == null) {
             return null;
         }
-
-        String t;
-        t = s.toUpperCase();
-
-        return t;
+        return s.toUpperCase();
     }
 
+    // throws if object has been destroyed
     private void checkNotDead(Obj o) {
-
         if (o == null) {
             return;
         }
-
         if (o.dead == true) {
             throw new RuntimeException("Object already destroyed, cannot use it.");
         }
     }
 
+    // lookup class info by name (case-insensitive)
     private ClassInfo getClassInfo(String name) {
-
         if (name == null) {
             return null;
         }
@@ -140,8 +133,8 @@ public class interperter extends delphiBaseVisitor<Object> {
         return null;
     }
 
+    // find a method in class or any parent
     private MethodInfo findMethodUp(ClassInfo ci, String methodName) {
-
         if (ci == null) {
             return null;
         }
@@ -168,8 +161,8 @@ public class interperter extends delphiBaseVisitor<Object> {
         return null;
     }
 
+    // find a constructor in class or any parent
     private MethodInfo findCtorUp(ClassInfo ci, String ctorName) {
-
         if (ci == null) {
             return null;
         }
@@ -196,8 +189,8 @@ public class interperter extends delphiBaseVisitor<Object> {
         return null;
     }
 
+    // find a destructor in class or any parent
     private MethodInfo findDtorUp(ClassInfo ci, String dtorName) {
-
         if (ci == null) {
             return null;
         }
@@ -224,8 +217,8 @@ public class interperter extends delphiBaseVisitor<Object> {
         return null;
     }
 
+    // find field visibility in class or any parent
     private Boolean findFieldVisUp(ClassInfo ci, String fieldName) {
-
         if (ci == null) {
             return null;
         }
@@ -252,12 +245,11 @@ public class interperter extends delphiBaseVisitor<Object> {
         return null;
     }
 
+    // init fields across class + ancestors with default 0
     private void initFieldsUp(Obj obj, ClassInfo ci) {
-
         if (obj == null) {
             return;
         }
-
         if (ci == null) {
             return;
         }
@@ -293,8 +285,8 @@ public class interperter extends delphiBaseVisitor<Object> {
         }
     }
 
+    // verify class implements all methods required by its interfaces
     private void checkInterfaces(ClassInfo ci) {
-
         if (ci == null) {
             return;
         }
@@ -338,8 +330,8 @@ public class interperter extends delphiBaseVisitor<Object> {
         }
     }
 
+    // split on first dot only (supports "a.b")
     private String[] splitDotPathManual(String text) {
-
         if (text == null) {
             return new String[0];
         }
@@ -350,7 +342,6 @@ public class interperter extends delphiBaseVisitor<Object> {
         int i;
         i = 0;
         while (i < text.length()) {
-
             char c;
             c = text.charAt(i);
 
@@ -383,6 +374,7 @@ public class interperter extends delphiBaseVisitor<Object> {
         return two;
     }
 
+    // resolve identifier value: locals -> self fields -> globals
     private Object getNameValue(String name) {
 
         String key;
@@ -423,6 +415,7 @@ public class interperter extends delphiBaseVisitor<Object> {
         throw new RuntimeException("Variable not defined: " + name);
     }
 
+    // assign to identifier: locals -> self fields -> globals
     private void setNameValue(String name, Object val) {
 
         String key;
@@ -459,6 +452,7 @@ public class interperter extends delphiBaseVisitor<Object> {
         variableStorage.put(key, val);
     }
 
+    // read a field with access control
     private Object getFieldValue(Obj obj, String fieldName, boolean fromOutside) {
 
         checkNotDead(obj);
@@ -486,6 +480,7 @@ public class interperter extends delphiBaseVisitor<Object> {
         return obj.fields.get(up(fieldName));
     }
 
+    // write a field with access control
     private void setFieldValue(Obj obj, String fieldName, Object value, boolean fromOutside) {
 
         checkNotDead(obj);
@@ -513,6 +508,7 @@ public class interperter extends delphiBaseVisitor<Object> {
         obj.fields.put(up(fieldName), value);
     }
 
+    // extract parameter names from parse tree
     private List<String> grabParams(delphiParser.FormalParameterListContext fpl) {
 
         List<String> params;
@@ -562,6 +558,7 @@ public class interperter extends delphiBaseVisitor<Object> {
     @Override
     public Object visitTypeDefinition(delphiParser.TypeDefinitionContext ctx) {
 
+        // parse a type definition (interface or class)
         String typeName;
         typeName = up(ctx.identifier().getText());
 
@@ -569,6 +566,7 @@ public class interperter extends delphiBaseVisitor<Object> {
             return super.visitTypeDefinition(ctx);
         }
 
+        // handle interface definitions
         if (ctx.type_().interfaceType() != null) {
 
             InterfaceInfo ii;
@@ -631,6 +629,7 @@ public class interperter extends delphiBaseVisitor<Object> {
             return null;
         }
 
+        // handle class definitions
         if (ctx.type_().classType() != null) {
 
             ClassInfo ci;
@@ -639,6 +638,7 @@ public class interperter extends delphiBaseVisitor<Object> {
             delphiParser.ClassTypeContext ct;
             ct = ctx.type_().classType();
 
+            // parse parent + interfaces list
             if (ct.classHeritage() != null) {
 
                 List<delphiParser.IdentifierContext> ids;
@@ -777,27 +777,23 @@ public class interperter extends delphiBaseVisitor<Object> {
 
     @Override
     public Object visitProgram(delphiParser.ProgramContext ctx) {
-
         delphiParser.BlockContext b;
         b = ctx.block();
-
-        Object r;
-        r = visit(b);
-
-        return r;
+        return visit(b);
     }
 
     @Override
     public Object visitForStatement(delphiParser.ForStatementContext ctx) {
 
-        String varName = ctx.identifier().getText();          // i
-        Object startObj = visit(ctx.forList().initialValue()); // start expression
-        Object endObj   = visit(ctx.forList().finalValue());   // end expression
+        // evaluate bounds then run loop body
+        String varName = ctx.identifier().getText();
+        Object startObj = visit(ctx.forList().initialValue());
+        Object endObj   = visit(ctx.forList().finalValue());
 
         int start = convertToInt(startObj);
         int end   = convertToInt(endObj);
 
-        boolean isTo = (ctx.forList().TO() != null); // TO vs DOWNTO
+        boolean isTo = (ctx.forList().TO() != null);
 
         if (isTo) {
             int v = start;
@@ -821,6 +817,7 @@ public class interperter extends delphiBaseVisitor<Object> {
     @Override
     public Object visitProcedureStatement(delphiParser.ProcedureStatementContext ctx) {
 
+        // detect builtins and dispatch calls
         String whole;
         whole = ctx.getText();
 
@@ -935,88 +932,85 @@ public class interperter extends delphiBaseVisitor<Object> {
         }
 
         if (ctx.call_Designator() != null) {
-
             visit(ctx.call_Designator());
             return null;
         }
 
+        // allow "obj.method;" without parentheses
         if (ctx.variable() != null) {
 
             String vtxt;
             vtxt = ctx.variable().getText();
 
-            if (vtxt != null) {
+            if (vtxt != null && vtxt.contains(".")) {
 
-                if (vtxt.contains(".")) {
+                String[] parts;
+                parts = splitDotPathManual(vtxt);
 
-                    String[] parts;
-                    parts = splitDotPathManual(vtxt);
+                if (parts.length == 2) {
 
-                    if (parts.length == 2) {
+                    String left;
+                    left = parts[0];
 
-                        String left;
-                        left = parts[0];
+                    String right;
+                    right = parts[1];
 
-                        String right;
-                        right = parts[1];
+                    Object objVal;
+                    objVal = getNameValue(left);
 
-                        Object objVal;
-                        objVal = getNameValue(left);
+                    if (objVal instanceof Obj) {
 
-                        if (objVal instanceof Obj) {
+                        Obj obj;
+                        obj = (Obj) objVal;
 
-                            Obj obj;
-                            obj = (Obj) objVal;
+                        checkNotDead(obj);
 
-                            checkNotDead(obj);
+                        ClassInfo ci;
+                        ci = getClassInfo(obj.className);
 
-                            ClassInfo ci;
-                            ci = getClassInfo(obj.className);
+                        if (ci == null) {
+                            throw new RuntimeException("Unknown class: " + obj.className);
+                        }
 
-                            if (ci == null) {
-                                throw new RuntimeException("Unknown class: " + obj.className);
-                            }
+                        MethodInfo di;
+                        di = findDtorUp(ci, right);
 
-                            MethodInfo di;
-                            di = findDtorUp(ci, right);
+                        if (di != null) {
 
-                            if (di != null) {
+                            List<Object> noArgs;
+                            noArgs = new ArrayList<Object>();
 
-                                List<Object> noArgs;
-                                noArgs = new ArrayList<Object>();
+                            runMethodLikeCode(obj, ci, di, noArgs);
+                            obj.dead = true;
 
-                                runMethodLikeCode(obj, ci, di, noArgs);
-                                obj.dead = true;
+                            return null;
+                        }
 
-                                return null;
-                            }
+                        MethodInfo mi;
+                        mi = findMethodUp(ci, right);
 
-                            MethodInfo mi;
-                            mi = findMethodUp(ci, right);
+                        if (mi != null) {
 
-                            if (mi != null) {
+                            boolean fromOutside;
+                            fromOutside = true;
 
-                                boolean fromOutside;
-                                fromOutside = true;
-
-                                if (currentClassName != null) {
-                                    if (up(currentClassName).equals(up(obj.className))) {
-                                        fromOutside = false;
-                                    }
+                            if (currentClassName != null) {
+                                if (up(currentClassName).equals(up(obj.className))) {
+                                    fromOutside = false;
                                 }
-
-                                if (fromOutside == true) {
-                                    if (mi.isPublic == false) {
-                                        throw new RuntimeException("Cannot call PRIVATE method: " + right);
-                                    }
-                                }
-
-                                List<Object> noArgs;
-                                noArgs = new ArrayList<Object>();
-
-                                runMethodLikeCode(obj, ci, mi, noArgs);
-                                return null;
                             }
+
+                            if (fromOutside == true) {
+                                if (mi.isPublic == false) {
+                                    throw new RuntimeException("Cannot call PRIVATE method: " + right);
+                                }
+                            }
+
+                            List<Object> noArgs;
+                            noArgs = new ArrayList<Object>();
+
+                            runMethodLikeCode(obj, ci, mi, noArgs);
+                            return null;
                         }
                     }
                 }
@@ -1029,6 +1023,7 @@ public class interperter extends delphiBaseVisitor<Object> {
     @Override
     public Object visitCall_Designator(delphiParser.Call_DesignatorContext ctx) {
 
+        // handle "Class.Ctor(...)" and "obj.method(...)"
         String targetText;
         targetText = ctx.variable().getText();
 
@@ -1050,109 +1045,107 @@ public class interperter extends delphiBaseVisitor<Object> {
             }
         }
 
-        if (targetText != null) {
+        if (targetText != null && targetText.contains(".")) {
 
-            if (targetText.contains(".")) {
+            String[] parts;
+            parts = splitDotPathManual(targetText);
 
-                String[] parts;
-                parts = splitDotPathManual(targetText);
+            if (parts.length == 2) {
 
-                if (parts.length == 2) {
+                String leftRaw;
+                leftRaw = parts[0];
 
-                    String leftRaw;
-                    leftRaw = parts[0];
+                String rightRaw;
+                rightRaw = parts[1];
 
-                    String rightRaw;
-                    rightRaw = parts[1];
+                String left;
+                left = up(leftRaw);
 
-                    String left;
-                    left = up(leftRaw);
+                String right;
+                right = up(rightRaw);
 
-                    String right;
-                    right = up(rightRaw);
+                if (classes.containsKey(left)) {
 
-                    if (classes.containsKey(left)) {
+                    ClassInfo ci;
+                    ci = classes.get(left);
 
-                        ClassInfo ci;
-                        ci = classes.get(left);
+                    MethodInfo ctor;
+                    ctor = findCtorUp(ci, right);
 
-                        MethodInfo ctor;
-                        ctor = findCtorUp(ci, right);
-
-                        if (ctor == null) {
-                            throw new RuntimeException("Constructor not found: " + left + "." + right);
-                        }
-
-                        Obj obj;
-                        obj = new Obj(left);
-
-                        initFieldsUp(obj, ci);
-
-                        runMethodLikeCode(obj, ci, ctor, args);
-
-                        return obj;
+                    if (ctor == null) {
+                        throw new RuntimeException("Constructor not found: " + left + "." + right);
                     }
 
-                    Object objVal;
-                    objVal = getNameValue(leftRaw);
+                    Obj obj;
+                    obj = new Obj(left);
 
-                    if (objVal instanceof Obj) {
+                    initFieldsUp(obj, ci);
 
-                        Obj obj;
-                        obj = (Obj) objVal;
+                    runMethodLikeCode(obj, ci, ctor, args);
 
-                        checkNotDead(obj);
+                    return obj;
+                }
 
-                        ClassInfo ci;
-                        ci = getClassInfo(obj.className);
+                Object objVal;
+                objVal = getNameValue(leftRaw);
 
-                        if (ci == null) {
-                            throw new RuntimeException("Unknown class: " + obj.className);
-                        }
+                if (objVal instanceof Obj) {
 
-                        MethodInfo di;
-                        di = findDtorUp(ci, right);
+                    Obj obj;
+                    obj = (Obj) objVal;
 
-                        if (di != null) {
-                            runMethodLikeCode(obj, ci, di, args);
-                            obj.dead = true;
-                            return null;
-                        }
+                    checkNotDead(obj);
 
-                        MethodInfo mi;
-                        mi = findMethodUp(ci, right);
+                    ClassInfo ci;
+                    ci = getClassInfo(obj.className);
 
-                        if (mi == null) {
-                            throw new RuntimeException("Method not found: " + obj.className + "." + right);
-                        }
+                    if (ci == null) {
+                        throw new RuntimeException("Unknown class: " + obj.className);
+                    }
 
-                        boolean fromOutside;
-                        fromOutside = true;
+                    MethodInfo di;
+                    di = findDtorUp(ci, right);
 
-                        if (currentClassName != null) {
-                            if (up(currentClassName).equals(up(obj.className))) {
-                                fromOutside = false;
-                            }
-                        }
-
-                        if (fromOutside == true) {
-                            if (mi.isPublic == false) {
-                                throw new RuntimeException("Cannot call PRIVATE method: " + right);
-                            }
-                        }
-
-                        runMethodLikeCode(obj, ci, mi, args);
+                    if (di != null) {
+                        runMethodLikeCode(obj, ci, di, args);
+                        obj.dead = true;
                         return null;
                     }
 
-                    throw new RuntimeException(leftRaw + " is not an object");
+                    MethodInfo mi;
+                    mi = findMethodUp(ci, right);
+
+                    if (mi == null) {
+                        throw new RuntimeException("Method not found: " + obj.className + "." + right);
+                    }
+
+                    boolean fromOutside;
+                    fromOutside = true;
+
+                    if (currentClassName != null) {
+                        if (up(currentClassName).equals(up(obj.className))) {
+                            fromOutside = false;
+                        }
+                    }
+
+                    if (fromOutside == true) {
+                        if (mi.isPublic == false) {
+                            throw new RuntimeException("Cannot call PRIVATE method: " + right);
+                        }
+                    }
+
+                    runMethodLikeCode(obj, ci, mi, args);
+                    return null;
                 }
+
+                throw new RuntimeException(leftRaw + " is not an object");
             }
         }
 
         return null;
     }
 
+    // run a method/ctor/dtor with new self + locals
     private void runMethodLikeCode(Obj obj, ClassInfo ci, MethodInfo mi, List<Object> args) {
 
         Obj oldSelf;
@@ -1204,54 +1197,52 @@ public class interperter extends delphiBaseVisitor<Object> {
     @Override
     public Object visitAssignmentStatement(delphiParser.AssignmentStatementContext ctx) {
 
+        // assign to var or obj.field
         String leftText;
         leftText = ctx.variable().getText();
 
         Object value;
         value = visit(ctx.expression());
 
-        if (leftText != null) {
+        if (leftText != null && leftText.contains(".")) {
 
-            if (leftText.contains(".")) {
+            String[] parts;
+            parts = splitDotPathManual(leftText);
 
-                String[] parts;
-                parts = splitDotPathManual(leftText);
-
-                if (parts.length != 2) {
-                    throw new RuntimeException("Only one dot supported right now (obj.field). Got: " + leftText);
-                }
-
-                String objName;
-                objName = parts[0];
-
-                String fieldName;
-                fieldName = parts[1];
-
-                Object objVal;
-                objVal = getNameValue(objName);
-
-                if (objVal instanceof Obj) {
-
-                    Obj o;
-                    o = (Obj) objVal;
-
-                    checkNotDead(o);
-
-                    boolean fromOutside;
-                    fromOutside = true;
-
-                    if (currentClassName != null) {
-                        if (up(currentClassName).equals(up(o.className))) {
-                            fromOutside = false;
-                        }
-                    }
-
-                    setFieldValue(o, fieldName, value, fromOutside);
-                    return null;
-                }
-
-                throw new RuntimeException(objName + " is not an object");
+            if (parts.length != 2) {
+                throw new RuntimeException("Only one dot supported right now (obj.field). Got: " + leftText);
             }
+
+            String objName;
+            objName = parts[0];
+
+            String fieldName;
+            fieldName = parts[1];
+
+            Object objVal;
+            objVal = getNameValue(objName);
+
+            if (objVal instanceof Obj) {
+
+                Obj o;
+                o = (Obj) objVal;
+
+                checkNotDead(o);
+
+                boolean fromOutside;
+                fromOutside = true;
+
+                if (currentClassName != null) {
+                    if (up(currentClassName).equals(up(o.className))) {
+                        fromOutside = false;
+                    }
+                }
+
+                setFieldValue(o, fieldName, value, fromOutside);
+                return null;
+            }
+
+            throw new RuntimeException(objName + " is not an object");
         }
 
         setNameValue(leftText, value);
@@ -1261,50 +1252,48 @@ public class interperter extends delphiBaseVisitor<Object> {
     @Override
     public Object visitVariable(delphiParser.VariableContext ctx) {
 
+        // read var or obj.field
         String txt;
         txt = ctx.getText();
 
-        if (txt != null) {
+        if (txt != null && txt.contains(".")) {
 
-            if (txt.contains(".")) {
+            String[] parts;
+            parts = splitDotPathManual(txt);
 
-                String[] parts;
-                parts = splitDotPathManual(txt);
-
-                if (parts.length != 2) {
-                    throw new RuntimeException("Only one dot supported right now (obj.field). Got: " + txt);
-                }
-
-                String objName;
-                objName = parts[0];
-
-                String fieldName;
-                fieldName = parts[1];
-
-                Object objVal;
-                objVal = getNameValue(objName);
-
-                if (objVal instanceof Obj) {
-
-                    Obj o;
-                    o = (Obj) objVal;
-
-                    checkNotDead(o);
-
-                    boolean fromOutside;
-                    fromOutside = true;
-
-                    if (currentClassName != null) {
-                        if (up(currentClassName).equals(up(o.className))) {
-                            fromOutside = false;
-                        }
-                    }
-
-                    return getFieldValue(o, fieldName, fromOutside);
-                }
-
-                throw new RuntimeException(objName + " is not an object");
+            if (parts.length != 2) {
+                throw new RuntimeException("Only one dot supported right now (obj.field). Got: " + txt);
             }
+
+            String objName;
+            objName = parts[0];
+
+            String fieldName;
+            fieldName = parts[1];
+
+            Object objVal;
+            objVal = getNameValue(objName);
+
+            if (objVal instanceof Obj) {
+
+                Obj o;
+                o = (Obj) objVal;
+
+                checkNotDead(o);
+
+                boolean fromOutside;
+                fromOutside = true;
+
+                if (currentClassName != null) {
+                    if (up(currentClassName).equals(up(o.className))) {
+                        fromOutside = false;
+                    }
+                }
+
+                return getFieldValue(o, fieldName, fromOutside);
+            }
+
+            throw new RuntimeException(objName + " is not an object");
         }
 
         return getNameValue(txt);
@@ -1312,22 +1301,13 @@ public class interperter extends delphiBaseVisitor<Object> {
 
     @Override
     public Object visitUnsignedInteger(delphiParser.UnsignedIntegerContext ctx) {
-
-        String t;
-        t = ctx.getText();
-
-        int n;
-        n = Integer.parseInt(t);
-
-        Integer box;
-        box = Integer.valueOf(n);
-
-        return box;
+        return Integer.valueOf(Integer.parseInt(ctx.getText()));
     }
 
     @Override
     public Object visitExpression(delphiParser.ExpressionContext ctx) {
 
+        // supports equality only when relationaloperator exists
         if (ctx.relationaloperator() == null) {
             return visit(ctx.simpleExpression());
         }
@@ -1338,13 +1318,7 @@ public class interperter extends delphiBaseVisitor<Object> {
         Object rightValue;
         rightValue = visit(ctx.expression());
 
-        boolean same;
-        same = leftValue.equals(rightValue);
-
-        Boolean box;
-        box = Boolean.valueOf(same);
-
-        return box;
+        return Boolean.valueOf(leftValue.equals(rightValue));
     }
 
     @Override
@@ -1354,36 +1328,14 @@ public class interperter extends delphiBaseVisitor<Object> {
             return visit(ctx.term());
         }
 
-        Object leftObj;
-        leftObj = visit(ctx.term());
-
-        Object rightObj;
-        rightObj = visit(ctx.simpleExpression());
-
-        int leftNumber;
-        leftNumber = convertToInt(leftObj);
-
-        int rightNumber;
-        rightNumber = convertToInt(rightObj);
+        int leftNumber = convertToInt(visit(ctx.term()));
+        int rightNumber = convertToInt(visit(ctx.simpleExpression()));
 
         if (ctx.additiveoperator().PLUS() != null) {
-
-            int sum;
-            sum = leftNumber + rightNumber;
-
-            Integer box;
-            box = Integer.valueOf(sum);
-
-            return box;
+            return Integer.valueOf(leftNumber + rightNumber);
         }
 
-        int diff;
-        diff = leftNumber - rightNumber;
-
-        Integer box;
-        box = Integer.valueOf(diff);
-
-        return box;
+        return Integer.valueOf(leftNumber - rightNumber);
     }
 
     @Override
@@ -1393,57 +1345,28 @@ public class interperter extends delphiBaseVisitor<Object> {
             return visit(ctx.signedFactor());
         }
 
-        Object aObj;
-        aObj = visit(ctx.signedFactor());
-
-        Object bObj;
-        bObj = visit(ctx.term());
-
-        int a;
-        a = convertToInt(aObj);
-
-        int b;
-        b = convertToInt(bObj);
+        int a = convertToInt(visit(ctx.signedFactor()));
+        int b = convertToInt(visit(ctx.term()));
 
         if (ctx.multiplicativeoperator().STAR() != null) {
-
-            int prod;
-            prod = a * b;
-
-            Integer box;
-            box = Integer.valueOf(prod);
-
-            return box;
+            return Integer.valueOf(a * b);
         }
 
         if (b == 0) {
             throw new RuntimeException("Cannot divide by zero.");
         }
 
-        int div;
-        div = a / b;
-
-        Integer box;
-        box = Integer.valueOf(div);
-
-        return box;
+        return Integer.valueOf(a / b);
     }
 
+    // converts runtime value to int or throws
     private int convertToInt(Object incoming) {
-
         if (incoming == null) {
             throw new RuntimeException("Null value found where integer expected.");
         }
 
         if (incoming instanceof Integer) {
-
-            Integer ii;
-            ii = (Integer) incoming;
-
-            int v;
-            v = ii.intValue();
-
-            return v;
+            return ((Integer) incoming).intValue();
         }
 
         throw new RuntimeException("Expected integer but found different type.");

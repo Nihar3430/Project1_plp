@@ -1,4 +1,4 @@
-// Generated from /Users/nihardevireddy/IdeaProjects/PLP_Project1/src/delphi.g4 by ANTLR 4.13.2
+// Generated from delphi.g4 by ANTLR 4.13.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**

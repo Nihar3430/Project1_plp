@@ -34,7 +34,7 @@ public class Main {
             delphiParser pars;
             pars = new delphiParser(toks);
 
-            // show parse errors in a simple way
+            // show parse error
             pars.removeErrorListeners();
             pars.addErrorListener(new BaseErrorListener() {
                 @Override
