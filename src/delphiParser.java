@@ -26,8 +26,8 @@ public class delphiParser extends Parser {
 		LBRACK2=58, RBRACK=59, RBRACK2=60, POINTER=61, AT=62, DOT=63, DOTDOT=64, 
 		LCURLY=65, RCURLY=66, UNIT=67, INTERFACE=68, USES=69, STRING=70, IMPLEMENTATION=71, 
 		TRUE=72, FALSE=73, WS=74, COMMENT_1=75, COMMENT_2=76, CLASS=77, PRIVATE=78, 
-		PUBLIC=79, CONSTRUCTOR=80, DESTRUCTOR=81, READLN=82, WRITELN=83, IDENT=84, 
-		STRING_LITERAL=85, NUM_INT=86, NUM_REAL=87;
+		PUBLIC=79, CONSTRUCTOR=80, DESTRUCTOR=81, IDENT=82, STRING_LITERAL=83, 
+		NUM_INT=84, NUM_REAL=85;
 	public static final int
 		RULE_program = 0, RULE_programHeading = 1, RULE_identifier = 2, RULE_block = 3, 
 		RULE_usesUnitsPart = 4, RULE_labelDeclarationPart = 5, RULE_label = 6, 
@@ -104,8 +104,7 @@ public class delphiParser extends Parser {
 			"'>'", "'('", "')'", "'['", "'(.'", "']'", "'.)'", "'^'", "'@'", "'.'", 
 			"'..'", "'{'", "'}'", "'UNIT'", "'INTERFACE'", "'USES'", "'STRING'", 
 			"'IMPLEMENTATION'", "'TRUE'", "'FALSE'", null, null, null, "'CLASS'", 
-			"'PRIVATE'", "'PUBLIC'", "'CONSTRUCTOR'", "'DESTRUCTOR'", "'READLN'", 
-			"'WRITELN'"
+			"'PRIVATE'", "'PUBLIC'", "'CONSTRUCTOR'", "'DESTRUCTOR'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
@@ -121,7 +120,7 @@ public class delphiParser extends Parser {
 			"POINTER", "AT", "DOT", "DOTDOT", "LCURLY", "RCURLY", "UNIT", "INTERFACE", 
 			"USES", "STRING", "IMPLEMENTATION", "TRUE", "FALSE", "WS", "COMMENT_1", 
 			"COMMENT_2", "CLASS", "PRIVATE", "PUBLIC", "CONSTRUCTOR", "DESTRUCTOR", 
-			"READLN", "WRITELN", "IDENT", "STRING_LITERAL", "NUM_INT", "NUM_REAL"
+			"IDENT", "STRING_LITERAL", "NUM_INT", "NUM_REAL"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -2614,7 +2613,7 @@ public class delphiParser extends Parser {
 			setState(429);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==FUNCTION || _la==PROCEDURE || ((((_la - 80)) & ~0x3f) == 0 && ((1L << (_la - 80)) & 19L) != 0)) {
+			while (_la==FUNCTION || _la==PROCEDURE || ((((_la - 80)) & ~0x3f) == 0 && ((1L << (_la - 80)) & 7L) != 0)) {
 				{
 				{
 				setState(426);
@@ -3454,7 +3453,7 @@ public class delphiParser extends Parser {
 			setState(526);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 5080066976768852096L) != 0) || ((((_la - 72)) & ~0x3f) == 0 && ((1L << (_la - 72)) & 61443L) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 5080066976768852096L) != 0) || ((((_la - 72)) & ~0x3f) == 0 && ((1L << (_la - 72)) & 15363L) != 0)) {
 				{
 				setState(525);
 				parameterList();
@@ -7352,7 +7351,7 @@ public class delphiParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001W\u0385\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001U\u0385\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0002"+
 		"\u0005\u0007\u0005\u0002\u0006\u0007\u0006\u0002\u0007\u0007\u0007\u0002"+
 		"\b\u0007\b\u0002\t\u0007\t\u0002\n\u0007\n\u0002\u000b\u0007\u000b\u0002"+
@@ -7528,7 +7527,7 @@ public class delphiParser extends Parser {
 		"\u0000\u00e6\u00e7\u0005C\u0000\u0000\u00e7\u00e8\u0003\u0004\u0002\u0000"+
 		"\u00e8\u00e9\u0005/\u0000\u0000\u00e9\u00eb\u0001\u0000\u0000\u0000\u00ea"+
 		"\u00dc\u0001\u0000\u0000\u0000\u00ea\u00e6\u0001\u0000\u0000\u0000\u00eb"+
-		"\u0003\u0001\u0000\u0000\u0000\u00ec\u00ed\u0005T\u0000\u0000\u00ed\u0005"+
+		"\u0003\u0001\u0000\u0000\u0000\u00ec\u00ed\u0005R\u0000\u0000\u00ed\u0005"+
 		"\u0001\u0000\u0000\u0000\u00ee\u00f6\u0003\n\u0005\u0000\u00ef\u00f6\u0003"+
 		"\u000e\u0007\u0000\u00f0\u00f6\u0003\"\u0011\u0000\u00f1\u00f6\u0003j"+
 		"5\u0000\u00f2\u00f6\u0003n7\u0000\u00f3\u00f6\u0003\b\u0004\u0000\u00f4"+
@@ -7567,11 +7566,11 @@ public class delphiParser extends Parser {
 		"\u0000\u0129\u0015\u0001\u0000\u0000\u0000\u012a\u012d\u0003\u0018\f\u0000"+
 		"\u012b\u012d\u0003\u001a\r\u0000\u012c\u012a\u0001\u0000\u0000\u0000\u012c"+
 		"\u012b\u0001\u0000\u0000\u0000\u012d\u0017\u0001\u0000\u0000\u0000\u012e"+
-		"\u012f\u0005V\u0000\u0000\u012f\u0019\u0001\u0000\u0000\u0000\u0130\u0131"+
-		"\u0005W\u0000\u0000\u0131\u001b\u0001\u0000\u0000\u0000\u0132\u0133\u0007"+
+		"\u012f\u0005T\u0000\u0000\u012f\u0019\u0001\u0000\u0000\u0000\u0130\u0131"+
+		"\u0005U\u0000\u0000\u0131\u001b\u0001\u0000\u0000\u0000\u0132\u0133\u0007"+
 		"\u0000\u0000\u0000\u0133\u001d\u0001\u0000\u0000\u0000\u0134\u0135\u0007"+
 		"\u0001\u0000\u0000\u0135\u001f\u0001\u0000\u0000\u0000\u0136\u0137\u0005"+
-		"U\u0000\u0000\u0137!\u0001\u0000\u0000\u0000\u0138\u013c\u0005$\u0000"+
+		"S\u0000\u0000\u0137!\u0001\u0000\u0000\u0000\u0138\u013c\u0005$\u0000"+
 		"\u0000\u0139\u013a\u0003$\u0012\u0000\u013a\u013b\u0005/\u0000\u0000\u013b"+
 		"\u013d\u0001\u0000\u0000\u0000\u013c\u0139\u0001\u0000\u0000\u0000\u013d"+
 		"\u013e\u0001\u0000\u0000\u0000\u013e\u013c\u0001\u0000\u0000\u0000\u013e"+

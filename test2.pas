@@ -1,4 +1,4 @@
-PROGRAM Test;
+PROGRAM Test2;
 
 TYPE
   Counter = CLASS

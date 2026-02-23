@@ -856,8 +856,6 @@ PRIVATE     : 'PRIVATE';
 PUBLIC      : 'PUBLIC';
 CONSTRUCTOR : 'CONSTRUCTOR';
 DESTRUCTOR  : 'DESTRUCTOR';
-READLN      : 'READLN';
-WRITELN     : 'WRITELN';
 
 IDENT
     : ('A' .. 'Z') ('A' .. 'Z' | '0' .. '9' | '_')*

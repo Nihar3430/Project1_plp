@@ -1,61 +1,67 @@
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Main {
 
     public static void main(String[] args) {
 
+        String fileName;
+
+        fileName = "test1_io.pas"; // default if you forget to pass args
+        if (args != null) {
+            if (args.length > 0) {
+                fileName = args[0];
+            }
+        }
+
         try {
 
-            String chosenFile;
+            String code;
+            code = Files.readString(Paths.get(fileName));
 
-            if (args != null) {
-                if (args.length > 0) {
-                    chosenFile = args[0];
-                } else {
-                    chosenFile = "test.pas";
+            CharStream input;
+            input = CharStreams.fromString(code);
+
+            delphiLexer lex;
+            lex = new delphiLexer(input);
+
+            CommonTokenStream toks;
+            toks = new CommonTokenStream(lex);
+
+            delphiParser pars;
+            pars = new delphiParser(toks);
+
+            // show parse errors in a simple way
+            pars.removeErrorListeners();
+            pars.addErrorListener(new BaseErrorListener() {
+                @Override
+                public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
+                                        int line, int charPositionInLine,
+                                        String msg, RecognitionException e) {
+                    System.out.println("Parse error at line " + line + ":" + charPositionInLine);
+                    System.out.println(msg);
                 }
-            } else {
-                chosenFile = "test.pas";
-            }
+            });
 
-            File realFile = new File(chosenFile);
+            ParseTree tree;
+            tree = pars.program();
 
-            if (!realFile.exists()) {
-                System.out.println("ERROR: file not found -> " + chosenFile);
-                return;
-            }
+            interperter iRun;
+            iRun = new interperter();
 
-            InputStream streamFromFile = new FileInputStream(realFile);
+            iRun.visit(tree);
 
-            CharStream antlrInput = CharStreams.fromStream(streamFromFile);
+            System.out.println("\nExecution done.");
 
-            delphiLexer lexerObject = new delphiLexer(antlrInput);
-
-            CommonTokenStream tokenContainer = new CommonTokenStream(lexerObject);
-
-            delphiParser parserObject = new delphiParser(tokenContainer);
-
-            ParseTree parseTreeRoot = parserObject.program();
-
-            interperter executor = new interperter();
-
-            executor.visit(parseTreeRoot);
-
-            System.out.println("Execution done.");
-
-        } catch (Exception problem) {
+        } catch (Exception e) {
 
             System.out.println("Something went wrong while running.");
-            System.out.println(problem.getMessage());
+            System.out.println(e.getMessage());
+            e.printStackTrace();
 
-            problem.printStackTrace();
         }
     }
 }
