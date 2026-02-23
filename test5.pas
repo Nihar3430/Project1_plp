@@ -1,35 +1,29 @@
-PROGRAM Test;
+PROGRAM test_destructor_SHOULD_FAIL_AS_OBJECT_IS_DESTROYED;
 
 TYPE
-  Base = CLASS
+  Thing = CLASS
     PUBLIC
       x : INTEGER;
-      CONSTRUCTOR Create(v: INTEGER);
-      BEGIN
-        x := v;
-      END;
-      PROCEDURE AddOne;
-      BEGIN
-        x := x + 1;
-      END;
-  END;
 
-  Child = CLASS(Base)
-    PUBLIC
-      PROCEDURE AddTwo;
+      CONSTRUCTOR Create;
       BEGIN
-        x := x + 2;
+        x := 111;
+      END;
+
+      DESTRUCTOR Destroy;
+      BEGIN
+        writeln(222);
       END;
   END;
 
 VAR
-  c : Child;
-  n : INTEGER;
+  t : Thing;
 
 BEGIN
-  readln(n);
-  c := Child.Create(n);   { uses Base.Create via inheritance }
-  c.AddOne;               { Base method }
-  c.AddTwo;               { Child method }
-  writeln(c.x);           { inherited field }
+  t := Thing.Create();
+  writeln(t.x);
+
+  t.Destroy;
+
+  writeln(t.x);
 END.

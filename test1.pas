@@ -1,7 +1,31 @@
-PROGRAM Test1;
+PROGRAM Test_io_class;
+
+TYPE
+  Box = CLASS
+    PUBLIC
+      x : INTEGER;
+
+      CONSTRUCTOR Create;
+      BEGIN
+        x := 0;
+      END;
+
+      PROCEDURE AddTwo;
+      BEGIN
+        x := x + 2;
+      END;
+  END;
+
 VAR
-  x : INTEGER;
+  b : Box;
+  n : INTEGER;
+
 BEGIN
-  readln(x);
-  writeln(x);
+  readln(n);
+
+  b := Box.Create();
+  b.x := n;
+
+  b.AddTwo;
+  writeln(b.x);
 END.

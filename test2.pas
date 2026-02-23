@@ -1,29 +1,26 @@
-PROGRAM Test2;
+PROGRAM Test_constructor_and_separate_classes;
 
 TYPE
-  Counter = CLASS
-    PRIVATE
-      secret : INTEGER;
+  Box = CLASS
     PUBLIC
       x : INTEGER;
 
       CONSTRUCTOR Create(v: INTEGER);
       BEGIN
         x := v;
-        secret := 100;
-      END;
-
-      PROCEDURE Inc;
-      BEGIN
-        x := x + 1;
       END;
   END;
 
 VAR
-  c : Counter;
+  a : Box;
+  b : Box;
 
 BEGIN
-  c := Counter.Create(5);
-  c.Inc;
-  writeln(c.x);
+  a := Box.Create(10);
+  b := Box.Create(99);
+
+  writeln(a.x);
+  writeln(b.x);
+
+  writeln(a.x);
 END.

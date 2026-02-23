@@ -1,30 +1,36 @@
-PROGRAM Test;
+PROGRAM Test_inheritance;
 
 TYPE
-  IFoo = INTERFACE
-    PROCEDURE Inc;
-  END;
-
-  Counter = CLASS(IFoo)
+  Base = CLASS
     PUBLIC
       x : INTEGER;
-      CONSTRUCTOR Create(v: INTEGER);
+
+      CONSTRUCTOR Create;
       BEGIN
-        x := v;
+        x := 0;
       END;
-      PROCEDURE Inc;
+
+      PROCEDURE IncX;
       BEGIN
         x := x + 1;
       END;
   END;
 
+  Child = CLASS(Base)
+    PUBLIC
+      CONSTRUCTOR Create;
+      BEGIN
+        x := 5;
+      END;
+  END;
+
 VAR
-  c : Counter;
-  n : INTEGER;
+  c : Child;
 
 BEGIN
-  readln(n);
-  c := Counter.Create(n);
-  c.Inc;
+  c := Child.Create();
+  writeln(c.x);
+
+  c.IncX;
   writeln(c.x);
 END.

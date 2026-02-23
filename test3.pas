@@ -1,23 +1,24 @@
-PROGRAM Test3;
+PROGRAM Test_encapsulation_SHOULD_FAIL_WITH_PRIVATE_ERROR;
 
 TYPE
-  A = CLASS
+  SecretBox = CLASS
     PRIVATE
       secret : INTEGER;
     PUBLIC
-      x : INTEGER;
-
-      CONSTRUCTOR Create(v: INTEGER);
+      CONSTRUCTOR Create;
       BEGIN
-        x := v;
-        secret := 99;
+        secret := 123;
       END;
   END;
 
 VAR
-  o : A;
+  s : SecretBox;
 
 BEGIN
-  o := A.Create(1);
-  writeln(o.secret);
+  s := SecretBox.Create();
+  writeln(1);
+
+  s.secret := 5;
+
+  writeln(2);
 END.

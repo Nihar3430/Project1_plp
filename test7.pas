@@ -1,34 +1,26 @@
-PROGRAM Test;
+PROGRAM Test9;
 
 TYPE
-  IFoo = INTERFACE
-    PROCEDURE Inc;
+  IPing = INTERFACE
+    PROCEDURE Ping;
   END;
 
-  Base = CLASS
+  Pinger = CLASS(IPing)
     PUBLIC
-      x : INTEGER;
-      CONSTRUCTOR Create(v: INTEGER);
+      CONSTRUCTOR Create;
       BEGIN
-        x := v;
       END;
-  END;
 
-  Child = CLASS(Base, IFoo)
-    PUBLIC
-      PROCEDURE Inc;
+      PROCEDURE Ping;
       BEGIN
-        x := x + 1;
+        writeln(77);
       END;
   END;
 
 VAR
-  c : Child;
-  n : INTEGER;
+  p : Pinger;
 
 BEGIN
-  readln(n);
-  c := Child.Create(n);
-  c.Inc;
-  writeln(c.x);
+  p := Pinger.Create();
+  p.Ping;
 END.

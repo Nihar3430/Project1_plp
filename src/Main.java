@@ -10,7 +10,7 @@ public class Main {
 
         String fileName;
 
-        fileName = "test1_io.pas"; // default if you forget to pass args
+        fileName = "test1.pas";
         if (args != null) {
             if (args.length > 0) {
                 fileName = args[0];
@@ -34,7 +34,6 @@ public class Main {
             delphiParser pars;
             pars = new delphiParser(toks);
 
-            // show parse error
             pars.removeErrorListeners();
             pars.addErrorListener(new BaseErrorListener() {
                 @Override
@@ -54,7 +53,7 @@ public class Main {
 
             iRun.visit(tree);
 
-            System.out.println("\nExecution done.");
+            System.out.println("\n End of Test.");
 
         } catch (Exception e) {
 

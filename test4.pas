@@ -1,27 +1,39 @@
-PROGRAM Test4;
+PROGRAM Test_encapsulation_good;
 
 TYPE
-  Thing = CLASS
+  SecretBox = CLASS
+    PRIVATE
+      secret : INTEGER;
     PUBLIC
-      x : INTEGER;
-
-      CONSTRUCTOR Create(v: INTEGER);
+      CONSTRUCTOR Create;
       BEGIN
-        x := v;
+        secret := 0;
       END;
 
-      DESTRUCTOR Destroy;
+      PROCEDURE Set42;
       BEGIN
-        x := 0;
+        secret := 42;
+      END;
+
+      PROCEDURE Set50;
+      BEGIN
+        secret := 50;
+      END;
+
+      PROCEDURE Show;
+      BEGIN
+        writeln(secret);
       END;
   END;
 
 VAR
-  t : Thing;
+  s : SecretBox;
 
 BEGIN
-  t := Thing.Create(7);
-  writeln(t.x);
-  t.Destroy;
-  writeln(t.x);
+  s := SecretBox.Create();
+  s.Set42;
+  s.Show;
+
+  s.Set50;
+  s.Show;
 END.
